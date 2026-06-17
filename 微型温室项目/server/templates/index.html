@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧微型温室控制台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #d1fae5;
+            --accent: #06b6d4;
+            --warm: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f0f7f4;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 2px 12px rgba(16, 185, 129, 0.08);
+            --shadow-hover: 0 8px 24px rgba(16, 185, 129, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* ========== 顶部导航 ========== */
+        .topbar {
+            background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+            color: white;
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .topbar-left { display: flex; align-items: center; gap: 14px; font-size: 19px; font-weight: 600; }
+        .topbar-icon { font-size: 26px; }
+        .topbar-right { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+               box-shadow: 0 0 0 3px rgba(255,255,255,0.2); }
+        .dot.online { background: #86efac; animation: pulse 2s infinite; }
+        .dot.offline { background: #fca5a5; }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.4); }
+            50% { box-shadow: 0 0 0 5px rgba(134, 239, 172, 0.6); }
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.2); color: white; border: none;
+            padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,0.3); }
+
+        /* ========== Tab ========== */
+        .tabs {
+            background: var(--card-bg);
+            padding: 0 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 4px;
+        }
+        .tab {
+            padding: 18px 24px;
+            cursor: pointer;
+            font-size: 15px;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .tab:hover { color: var(--primary); }
+        .tab.active {
+            color: var(--primary-dark);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* ========== 内容 ========== */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section { margin-bottom: 32px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .section-title { font-size: 20px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 10px; }
+        .section-title-icon { font-size: 24px; }
+        .section-subtitle { color: var(--text-muted); font-size: 13px; }
+
+        /* ========== 卡片通用 ========== */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: box-shadow 0.2s;
+        }
+
+        /* ========== 环境监测 Grid ========== */
+        .env-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) { .env-grid { grid-template-columns: 1fr; } }
+
+        /* 视频区 */
+        .video-card { display: flex; flex-direction: column; }
+        .video-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .video-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .video-badge {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(16, 185, 129, 0.95);
+            color: white; padding: 6px 14px; border-radius: 6px;
+            font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;
+        }
+        .video-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: white; animation: pulse 2s infinite; }
+        .video-footer {
+            margin-top: 14px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .btn-small {
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-small:hover { border-color: var(--primary); color: var(--primary-dark); }
+        .btn-small.primary { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-small.primary:hover { background: var(--primary-dark); }
+
+        /* 传感器卡片 */
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .sensor-card {
+            padding: 18px;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .sensor-card:hover { transform: translateY(-2px); }
+        .sensor-card .label { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+        .sensor-card .value { font-size: 30px; font-weight: 700; color: var(--text); }
+        .sensor-card .unit { font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 4px; }
+        .sensor-card .icon {
+            position: absolute; right: 14px; top: 14px;
+            font-size: 32px; opacity: 0.6;
+        }
+        .sc-temp  { background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%); }
+        .sc-humi  { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+        .sc-light { background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%); }
+        .sc-co2   { background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%); }
+        .sc-soil  { background: linear-gradient(135deg, #f0f9ff 0%, #bae6fd 100%); }
+        .sc-time  { background: linear-gradient(135deg, #fafafa 0%, #e5e7eb 100%); }
+
+        /* 历史趋势 */
+        .history-controls { display: flex; gap: 8px; }
+        .btn-range {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-range:hover { border-color: var(--primary); color: var(--primary-dark); }
+        .btn-range.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .date-picker {
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text);
+            background: white;
+            outline: none;
+            cursor: pointer;
+        }
+        .date-picker:focus { border-color: var(--primary); }
+
+        /* 单日统计表格（横排：行=指标，列=传感器） */
+        .history-stats {
+            display: block;
+            margin: 0 0 16px 0;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .stats-table-full th,
+        .stats-table-full td {
+            padding: 8px 14px;
+        }
+        .stats-table-full thead th {
+            text-align: center;
+        }
+        .stats-table thead th {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+            font-weight: 600;
+            color: var(--primary-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        .stats-table tbody th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: left;
+            border-right: 1px solid #e2e8f0;
+        }
+        .stats-table td {
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+        .stats-table tbody tr:last-child td,
+        .stats-table tbody tr:last-child th { border-bottom: none; }
+        .stats-table td.avg {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+        .stats-table caption,
+        .stats-table thead tr:first-child th {
+            font-size: 14px;
+        }
+
+        /* 近30天表格：可滚动区域 */
+        .stats-scroll-wrap {
+            max-height: 320px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+        .stats-scroll-wrap .stats-table {
+            border-radius: 0;
+        }
+
+        /* 单日统计：每格内 max / min / avg 堆叠 */
+        .stats-table-full {
+            table-layout: fixed;   /* 关键：固定列宽，避免被内容撑成单列 */
+            width: 100%;
+        }
+        .stats-table-full th,
+        .stats-table-full td {
+            padding: 8px 10px;
+            word-break: break-word;
+            vertical-align: top;
+        }
+        .stats-table-full thead th {
+            text-align: center;
+        }
+        .stat-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+        }
+        .stat-m {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .stat-m b { color: var(--text); font-weight: 600; }
+        .stat-m.avg { border-top: 1px solid #e2e8f0; padding-top: 4px; margin-top: 2px; }
+        .stat-m.avg b { color: var(--primary-dark); font-size: 14px; }
+
+        /* 单日紧凑表格：2 列，6 行（每个传感器一行） */
+        .stats-table-compact {
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        .stats-table-compact thead th {
+            text-align: center;
+        }
+        .stats-table-compact tbody th.sensor-name {
+            width: 38%;
+            text-align: left;
+            vertical-align: middle;
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        .stats-table-compact tbody td { padding: 6px 14px; }
+
+        /* 单日 6 列横排：第一列 max/min/avg 行表头 */
+        .stats-table-full tbody th.row-header {
+            width: 110px;
+            min-width: 110px;
+            text-align: center;
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .stats-table-full tbody td.avg-cell {
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 14px;
+        }
+        /* "未接入" 单元格：灰色、轻量 */
+        .stats-table-full td:contains('未接入') { /* fallback by JS below */ }
+        .stats-table td.text-muted {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+        /* 左上角空单元格：看起来不存在 */
+        .stats-table-full thead tr.sensor-header-row th.corner-empty {
+            width: 110px;
+            min-width: 110px;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        /* 暂无数据提示 */
+        .stats-empty-hint {
+            text-align: center;
+            padding: 12px;
+            color: #64748b;
+            font-size: 13px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chart-wrap { position: relative; height: 320px; margin-top: 10px; }
+
+        /* 历史趋势区域整体样式 */
+        .history-panel {
+            padding: 20px 24px;
+        }
+        @media (max-width: 768px) {
+            .history-panel { padding: 14px 12px; }
+            .stats-table-full th,
+            .stats-table-full td { padding: 6px 4px; font-size: 12px; }
+            .stats-table-full tbody th.row-header { width: 70px; min-width: 70px; font-size: 12px; }
+            .stats-table-full thead tr.sensor-header-row th.corner-empty { width: 70px; min-width: 70px; }
+        }
+
+        /* ========== 设备控制 ========== */
+        .device-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) { .device-layout { grid-template-columns: 1fr; } }
+
+        /* 手动控制 */
+        .manual-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .device-item {
+            padding: 18px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .device-item.active { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-color: var(--primary); }
+        .device-icon { font-size: 32px; min-width: 48px; text-align: center; }
+        .device-info { flex: 1; }
+        .device-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .device-status { font-size: 12px; color: var(--text-muted); }
+        .device-item.active .device-status { color: var(--primary-dark); font-weight: 600; }
+
+        /* 开关 */
+        .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #d1d5db; transition: .3s; border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 22px; width: 22px; left: 3px; bottom: 3px;
+            background: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .emergency-box {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+        }
+        .btn-emergency {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            color: var(--danger);
+            border: 2px solid #fecaca;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .btn-emergency:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        /* 模式选择 */
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .mode-tab.active {
+            background: white;
+            color: var(--primary-dark);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            font-weight: 600;
+        }
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; animation: fadeIn 0.3s; }
+
+        /* 阈值设置 */
+        .threshold-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .threshold-item:last-child { border-bottom: none; }
+        .threshold-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .threshold-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .threshold-inputs { display: flex; align-items: center; gap: 8px; }
+        .threshold-inputs input {
+            width: 70px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .threshold-inputs input:focus { outline: none; border-color: var(--primary); }
+        .threshold-range {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: var(--text-muted);
+        }
+        .threshold-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .threshold-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+
+        /* 时控设置 */
+        .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+        .schedule-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr 40px;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        .schedule-item select, .schedule-item input[type="time"] {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .schedule-icon { text-align: center; font-size: 22px; }
+        .schedule-del {
+            background: none; border: none; color: #ef4444;
+            cursor: pointer; font-size: 18px;
+        }
+        .schedule-del:hover { transform: scale(1.2); }
+        .schedule-add {
+            margin-top: 12px;
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed var(--border);
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .schedule-add:hover { border-color: var(--primary); color: var(--primary-dark); }
+
+        /* 自动控制提示条 */
+        .auto-indicator {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .ai-manual { background: #f3f4f6; color: var(--text-muted); }
+        .ai-threshold { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; }
+        .ai-schedule { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+        .auto-indicator-icon { font-size: 18px; }
+
+        /* ========== 病虫害识别 ========== */
+        .pest-layout {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) { .pest-layout { grid-template-columns: 1fr; } }
+
+        .pest-result-area {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .result-image {
+            width: 100%;
+            border-radius: 12px;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .result-image img { width: 100%; height: 100%; object-fit: contain; background: #000; }
+        .result-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .result-placeholder-icon { font-size: 56px; opacity: 0.5; }
+        .result-placeholder-text { font-size: 15px; }
+        .result-summary {
+            padding: 16px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .result-summary-icon {
+            font-size: 36px;
+            width: 56px; height: 56px;
+            background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .result-summary-info { flex: 1; }
+        .result-summary-title { font-size: 16px; font-weight: 600; color: var(--text); }
+        .result-summary-meta { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+        .result-summary-conf { font-size: 20px; font-weight: 700; color: var(--primary-dark); }
+
+        .detection-box {
+            margin-top: 14px;
+            padding: 14px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        .detection-item {
+            display: flex; justify-content: space-between;
+            padding: 6px 0; font-size: 13px;
+            border-bottom: 1px dashed var(--border);
+        }
+        .detection-item:last-child { border-bottom: none; }
+        .detection-item .cls { font-weight: 500; color: var(--text); }
+        .detection-item .conf { color: var(--primary-dark); font-weight: 600; }
+
+        /* 操作按钮 */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .action-btn.primary { background: var(--primary); color: white; }
+        .action-btn.primary:hover { background: var(--primary-dark); }
+        .action-btn.secondary { background: #f3f4f6; color: var(--text); }
+        .action-btn.secondary:hover { background: #e5e7eb; }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 历史记录列表 */
+        .pest-records-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .record-item {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 14px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .record-item:hover { background: #e5e7eb; transform: translateX(4px); }
+        .record-thumb {
+            width: 100px;
+            height: 75px;
+            border-radius: 8px;
+            background: #000;
+            overflow: hidden;
+        }
+        .record-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .record-info { display: flex; flex-direction: column; justify-content: space-between; }
+        .record-title { font-size: 14px; font-weight: 600; color: var(--text); }
+        .record-time { font-size: 12px; color: var(--text-muted); }
+        .record-mode {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state-icon { font-size: 48px; opacity: 0.4; margin-bottom: 12px; }
+
+        /* 抓拍图库 */
+        .capture-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+        @media (max-width: 768px) { .capture-grid { grid-template-columns: repeat(2, 1fr); } }
+        .capture-item {
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .capture-item:hover { border-color: var(--primary); transform: scale(1.03); }
+        .capture-item img { width: 100%; height: 100%; object-fit: cover; }
+        .capture-item-label {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.75));
+            color: white; padding: 20px 8px 6px;
+            font-size: 11px; text-align: center;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: #1f2937;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 1000;
+            max-width: 360px;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: var(--primary-dark); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--accent); }
+
+        .loading-spin {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- ========== 顶部导航 ========== -->
+<div class="topbar">
+    <div class="topbar-left">
+        <span class="topbar-icon">🌱</span>
+        <span>智慧微型温室控制台</span>
+    </div>
+    <div class="topbar-right">
+        <div class="status-item">
+            <span class="dot offline" id="esp-dot"></span>
+            <span id="esp-text">主控离线</span>
+        </div>
+        <div class="status-item">
+            <span class="dot offline" id="cam-dot"></span>
+            <span id="cam-text">摄像头离线</span>
+        </div>
+        <span id="current-time" style="font-family: 'Courier New', monospace; font-size: 15px;">--:--:--</span>
+        <button class="btn-logout" onclick="location.href='/logout'">退出</button>
+    </div>
+</div>
+
+<!-- ========== Tab ========== -->
+<div class="tabs">
+    <div class="tab active" data-tab="home" onclick="switchTab('home')">🏠 环境监测</div>
+    <div class="tab" data-tab="device" onclick="switchTab('device')">⚙️ 设备控制</div>
+    <div class="tab" data-tab="pest" onclick="switchTab('pest')">🔬 病虫害识别</div>
+</div>
+
+<!-- ========== 内容 ========== -->
+<div class="container">
+
+    <!-- ========== 页面1：环境监测 ========== -->
+    <div id="tab-home" class="tab-content active">
+
+        <!-- 视频 + 传感器 -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-title-icon">🏠</span>
+                    <span>实时环境监测</span>
+                </div>
+                <div class="section-subtitle">数据每 2 秒刷新</div>
+            </div>
+
+            <div class="env-grid">
+                <!-- 视频 -->
+                <div class="card video-card">
+                    <div class="video-wrap">
+                        <img src="/video_feed" alt="实时画面" id="video-stream"
+                             onerror="this.style.background='linear-gradient(135deg, #1f2937, #374151)'; this.src='';">
+                        <div class="video-badge">LIVE · 实时画面</div>
+                    </div>
+                    <div class="video-footer">
+                        <button class="btn-small" onclick="manualCapture()">📷 手动抓拍</button>
+                    </div>
+                </div>
+
+                <!-- 传感器 -->
+                <div class="card">
+                    <div class="sensor-grid">
+                        <div class="sensor-card sc-temp">
+                            <div class="icon">🌡️</div>
+                            <div class="label">温 度</div>
+                            <div><span class="value" id="val-temp">--</span><span class="unit">°C</span></div>
+                        </div>
+                        <div class="sensor-card sc-humi">
+                            <div class="icon">💧</div>
+                            <div class="label">湿 度</div>
+                            <div><span class="value" id="val-humi">--</span><span class="unit">%</span></div>
+                        </div>
+                        <div class="sensor-card sc-light">
+                            <div class="icon">☀️</div>
+                            <div class="label">光 照</div>
+                            <div><span class="value" id="val-light">--</span><span class="unit">lux</span></div>
+                        </div>
+                        <div class="sensor-card sc-co2">
+                            <div class="icon">🫧</div>
+                            <div class="label">CO₂ 浓度</div>
+                            <div><span class="value" id="val-co2">--</span><span class="unit">ppm</span></div>
+                        </div>
+                        <div class="sensor-card sc-soil">
+                            <div class="icon">🌿</div>
+                            <div class="label">土壤湿度</div>
+                            <div><span class="value" id="val-soil">--</span><span class="unit">%</span></div>
+                        </div>
+                        <div class="sensor-card sc-time">
+                            <div class="icon">⏱️</div>
+                            <div class="label">最后更新</div>
+                            <div style="font-size:18px; font-weight:600; color:var(--text);" id="val-update">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史趋势 -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-title-icon">📊</span>
+                    <span>环境参数历史趋势</span>
+                </div>
+                <div class="history-controls">
+                    <input type="date" id="history-date" class="date-picker"
+                           min="2020-01-01" max="" />
+                    <button class="btn-range active" onclick="loadHistoryByDate()">查此日</button>
+                    <button class="btn-range" onclick="loadHistoryDays(30, this)">近30天平均</button>
+                </div>
+            </div>
+            <div class="card">
+                <!-- 单日统计卡片（仅在查询单日时显示） -->
+                <div id="history-stats" class="history-stats" style="display:none;"></div>
+                <div class="chart-wrap">
+                    <canvas id="historyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ========== 页面2：设备控制 ========== -->
+    <div id="tab-device" class="tab-content">
+
+        <!-- 手动控制 + 自动控制 -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-title-icon">⚙️</span>
+                    <span>设备控制中心</span>
+                </div>
+                <div class="section-subtitle" id="current-mode-label">当前：手动控制</div>
+            </div>
+
+            <div class="device-layout">
+
+                <!-- 左侧：手动控制 -->
+                <div class="card">
+                    <h3 style="font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                        <span>🖐️</span> 手动控制
+                    </h3>
+
+                    <div class="auto-indicator ai-manual" id="auto-indicator">
+                        <span class="auto-indicator-icon">ℹ️</span>
+                        <span>手动模式下，所有设备由你直接控制，不会触发任何自动规则。</span>
+                    </div>
+
+                    <div class="manual-grid">
+                        <div class="device-item" id="item-fan">
+                            <div class="device-icon">💨</div>
+                            <div class="device-info">
+                                <div class="device-name">通风风扇</div>
+                                <div class="device-status" data-on="运行中" data-off="已关闭">已关闭</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="sw-fan" onchange="toggleDevice('fan')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="device-item" id="item-light">
+                            <div class="device-icon">💡</div>
+                            <div class="device-info">
+                                <div class="device-name">补光灯</div>
+                                <div class="device-status" data-on="已开启" data-off="已关闭">已关闭</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="sw-light" onchange="toggleDevice('light')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="device-item" id="item-water">
+                            <div class="device-icon">🚰</div>
+                            <div class="device-info">
+                                <div class="device-name">浇水水泵</div>
+                                <div class="device-status" data-on="运行中" data-off="已关闭">已关闭</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="sw-water" onchange="toggleDevice('water')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="device-item" id="item-heater">
+                            <div class="device-icon">🔥</div>
+                            <div class="device-info">
+                                <div class="device-name">升温设备</div>
+                                <div class="device-status" data-on="运行中" data-off="已关闭">已关闭</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="sw-heater" onchange="toggleDevice('heater')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="emergency-box">
+                        <button class="btn-emergency" onclick="emergencyStop()">🛑 全部停止</button>
+                    </div>
+                </div>
+
+                <!-- 右侧：自动控制 -->
+                <div class="card">
+                    <h3 style="font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                        <span>🤖</span> 自动控制
+                    </h3>
+
+                    <div class="mode-tabs">
+                        <div class="mode-tab active" data-mode="manual" onclick="setMode('manual')">手动</div>
+                        <div class="mode-tab" data-mode="threshold" onclick="setMode('threshold')">阈值控制</div>
+                        <div class="mode-tab" data-mode="schedule" onclick="setMode('schedule')">时控</div>
+                    </div>
+
+                    <!-- 手动提示 -->
+                    <div class="mode-panel active" data-mode-panel="manual">
+                        <div class="auto-indicator ai-manual">
+                            <span class="auto-indicator-icon">✋</span>
+                            <span>当前为手动模式，所有设备需要你手动控制。</span>
+                        </div>
+                    </div>
+
+                    <!-- 阈值控制面板 -->
+                    <div class="mode-panel" data-mode-panel="threshold">
+                        <div class="auto-indicator ai-threshold">
+                            <span class="auto-indicator-icon">⚙️</span>
+                            <span>阈值模式：环境参数超范围时自动开启/关闭设备。</span>
+                        </div>
+                        <div id="threshold-list">
+                            <!-- 动态插入 -->
+                        </div>
+                        <div class="threshold-actions">
+                            <button class="btn-small" onclick="loadThresholdRules()">🔄 重置</button>
+                            <button class="btn-small primary" onclick="saveThresholdRules()">💾 保存阈值</button>
+                        </div>
+                    </div>
+
+                    <!-- 时控面板 -->
+                    <div class="mode-panel" data-mode-panel="schedule">
+                        <div class="auto-indicator ai-schedule">
+                            <span class="auto-indicator-icon">⏰</span>
+                            <span>时控模式：按指定时间段自动开启对应设备。</span>
+                        </div>
+                        <div class="schedule-list" id="schedule-list">
+                            <!-- 动态插入 -->
+                        </div>
+                        <button class="schedule-add" onclick="addScheduleItem()">+ 添加定时规则</button>
+                        <div class="threshold-actions">
+                            <button class="btn-small" onclick="loadScheduleRules()">🔄 重置</button>
+                            <button class="btn-small primary" onclick="saveScheduleRules()">💾 保存时控</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ========== 页面3：病虫害识别 ========== -->
+    <div id="tab-pest" class="tab-content">
+
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-title-icon">🔬</span>
+                    <span>病虫害智能识别</span>
+                </div>
+                <div class="section-subtitle">识别结果自动保存到本地</div>
+            </div>
+
+            <div class="pest-layout">
+
+                <!-- 左侧：检测区 -->
+                <div class="card pest-result-area">
+
+                    <div class="video-wrap">
+                        <img src="/video_feed" alt="实时画面" id="pest-video-stream">
+                        <div class="video-badge">实时画面 · 点击检测</div>
+                    </div>
+
+                    <div class="action-row">
+                        <button class="action-btn primary" id="btn-recognize" onclick="runRecognition()">
+                            <span>🔬</span>
+                            <span>立即识别</span>
+                        </button>
+                        <button class="action-btn secondary" onclick="manualCapture()">
+                            <span>📷</span>
+                            <span>先抓拍再检测</span>
+                        </button>
+                    </div>
+
+                    <div id="pest-result-box" style="margin-top: 20px;">
+                        <div class="result-placeholder" id="result-placeholder">
+                            <div class="result-placeholder-icon">🔬</div>
+                            <div class="result-placeholder-text">点击"立即识别"开始病虫害检测</div>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:14px; margin-top:22px; margin-bottom:10px; color:var(--text-muted);">📸 最近抓拍（点击可检测）</h4>
+                    <div id="capture-grid" class="capture-grid">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 右侧：历史记录 -->
+                <div class="card">
+                    <h3 style="font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                        <span>📋</span> 本地识别记录
+                    </h3>
+                    <div class="pest-records-list" id="pest-records">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <div>暂无识别记录</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ============ 全局状态 ============
+    let deviceStates = { fan: false, light: false, water: false, heater: false };
+    let currentMode = 'manual';
+    let historyChart = null;
+    let thresholdCache = {};
+    let scheduleCache = [];
+
+    // ============ 工具函数 ============
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show ' + type;
+        setTimeout(() => t.className = 'toast', 2800);
+    }
+
+    // ============ Tab 切换 ============
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === tabName);
+        });
+        document.querySelectorAll('.tab-content').forEach(c => {
+            c.classList.toggle('active', c.id === 'tab-' + tabName);
+        });
+
+        if (tabName === 'home') loadHistory(1);
+        if (tabName === 'device') {
+            loadThresholdRules();
+            loadScheduleRules();
+        }
+        if (tabName === 'pest') {
+            loadCaptures();
+            loadPestRecords();
+        }
+    }
+
+    // ============ 状态刷新 ============
+    // 约定: 传感器值为 -1 / null 时，表明该传感器未接入，显示为"未接入"。
+    function _isMissing(v) {
+        return v === null || v === undefined || v === -1 || v === -1.0 || v === '-1';
+    }
+    function updateStatus() {
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                const s = data.sensor || {};
+                document.getElementById('val-temp').textContent = _isMissing(s.temperature) ? '未接入' : (parseFloat(s.temperature) || 0).toFixed(1);
+                document.getElementById('val-humi').textContent = _isMissing(s.humidity)    ? '未接入' : (parseFloat(s.humidity)    || 0).toFixed(1);
+                document.getElementById('val-light').textContent = _isMissing(s.light)     ? '未接入' : s.light;
+                document.getElementById('val-co2').textContent   = _isMissing(s.co2)       ? '未接入' : s.co2;
+                document.getElementById('val-soil').textContent  = _isMissing(s.soil_moisture) ? '未接入' : (parseFloat(s.soil_moisture) || 0).toFixed(1);
+                document.getElementById('val-update').textContent = s.last_update ? new Date(s.last_update).toLocaleTimeString() : '--';
+
+                // 在线状态
+                const espDot = document.getElementById('esp-dot');
+                const espText = document.getElementById('esp-text');
+                if (data.system.esp32_online) {
+                    espDot.className = 'dot online'; espText.textContent = '主控在线';
+                } else { espDot.className = 'dot offline'; espText.textContent = '主控离线'; }
+
+                const camDot = document.getElementById('cam-dot');
+                const camText = document.getElementById('cam-text');
+                if (data.system.cam_online) {
+                    camDot.className = 'dot online'; camText.textContent = '摄像头在线';
+                } else { camDot.className = 'dot offline'; camText.textContent = '摄像头离线'; }
+
+                // 模式显示
+                const modeText = { manual: '手动控制', threshold: '阈值自动控制', schedule: '时控自动控制' };
+                document.getElementById('current-mode-label').textContent = '当前：' + (modeText[data.system.mode] || modeText.manual);
+
+                // 设备开关状态
+                if (s.devices) {
+                    for (const key in s.devices) {
+                        const sw = document.getElementById('sw-' + key);
+                        const item = document.getElementById('item-' + key);
+                        if (sw && item) {
+                            sw.checked = !!s.devices[key];
+                            updateDeviceItem(key, !!s.devices[key]);
+                        }
+                    }
+                }
+
+                // 模式高亮
+                if (data.system.mode && data.system.mode !== currentMode) {
+                    updateModeUI(data.system.mode);
+                }
+            })
+            .catch(() => {});
+    }
+
+    function updateDeviceItem(key, on) {
+        const item = document.getElementById('item-' + key);
+        if (!item) return;
+        item.classList.toggle('active', on);
+        const statusEl = item.querySelector('.device-status');
+        if (statusEl) statusEl.textContent = on ? statusEl.dataset.on : statusEl.dataset.off;
+        deviceStates[key] = on;
+    }
+
+    // ============ 时间 ============
+    function updateTime() {
+        document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
+    }
+
+    // ============ 设备控制 ============
+    // 关键: UI 只信任 /api/status 定时刷新的真实反馈，不在此处"乐观更新"，
+    // 避免网络中断时 UI 与硬件状态不一致。
+    function toggleDevice(device) {
+        // 读取当前复选框的"目标状态"（用户点击后的新状态）
+        const sw = document.getElementById('sw-' + device);
+        const target_on = sw ? sw.checked : !deviceStates[device];
+        sendControl(device, target_on);
+    }
+
+    function sendControl(key, value) {
+        fetch('/api/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device: 'esp32_greenhouse_01', [key]: value })
+        }).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        }).then((resp) => {
+            showToast(`设备 [${deviceNames(key)}] ${value ? '指令已下发（稍后生效）' : '指令已下发（稍后关闭）'}`, 'success');
+        }).catch((err) => {
+            showToast('控制失败：' + (err?.message || '网络异常'), 'error');
+            // 回滚 UI 到服务器侧真实状态（由下一次 /api/status 刷新覆盖）
+        });
+    }
+
+    function deviceNames(key) {
+        return { fan: '通风风扇', light: '补光灯', water: '浇水水泵', heater: '升温设备' }[key] || key;
+    }
+
+    function emergencyStop() {
+        if (!confirm('确认停止所有设备？')) return;
+        fetch('/api/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device: 'esp32_greenhouse_01', all_off: true })
+        }).then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            showToast('一键停机指令已下发', 'success');
+        }).catch(() => showToast('操作失败，请检查连接', 'error'));
+    }
+
+    // ============ 手动抓拍 ============
+    function manualCapture() {
+        fetch('/api/capture/manual', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                showToast('已抓拍：' + (data.filename || '成功'), 'success');
+                // 如果在 pest 页，刷新列表
+                if (document.getElementById('tab-pest').classList.contains('active')) {
+                    loadCaptures();
+                }
+            }).catch(() => showToast('抓拍失败', 'error'));
+    }
+
+    // ============ 历史图表 ============
+
+    // 初始化日期选择器：默认今天
+    (function initDatePicker() {
+        const dp = document.getElementById('history-date');
+        if (dp) {
+            dp.max = new Date().toISOString().split('T')[0];
+            dp.value = dp.max;
+        }
+    })();
+
+    // 查指定日期
+    function loadHistoryByDate(btn) {
+        const date = document.getElementById('history-date').value;
+        if (!date) return;
+        document.querySelectorAll('.btn-range').forEach(b => b.classList.remove('active'));
+        fetch('/api/history?date=' + date)
+            .then(r => r.json())
+            .then(data => { renderChart(data); renderHistoryStats(data); })
+            .catch(() => {});
+    }
+
+    // 查近N天（跨天平均）
+    function loadHistoryDays(days, btn) {
+        if (btn) {
+            document.querySelectorAll('.btn-range').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        fetch('/api/history?days=' + days)
+            .then(r => r.json())
+            .then(data => { renderChart(data); renderHistoryStats(data); })
+            .catch(() => {});
+    }
+
+    // 渲染单日/近30天统计表格（仅在有数据时显示）
+    function renderHistoryStats(data) {
+        const box = document.getElementById('history-stats');
+        if (!box) return;
+        if (!data.stats && !data.daily_stats) {
+            box.style.display = 'none';
+            box.innerHTML = '';
+            return;
+        }
+        const f = (v, digits = 1) =>
+            (v === null || v === undefined)
+                ? '<span style="color:#94a3b8;font-weight:400;">未接入</span>'
+                : (+v).toFixed(digits);
+
+        // 5 个传感器及其单位
+        const sensors = [
+            { key: 'temperature',   name: '🌡️ 空气温度', unit: '°C',   digits: 1 },
+            { key: 'humidity',      name: '💧 湿度',      unit: '%',    digits: 1 },
+            { key: 'light',         name: '☀️ 光照',      unit: 'lux',  digits: 0 },
+            { key: 'co2',           name: '🌫️ CO₂',       unit: 'ppm',  digits: 0 },
+            { key: 'soil_moisture', name: '💧 土壤湿度',   unit: '%',    digits: 1 },
+            { key: 'soil_temperature', name: '🌡️ 土壤温度', unit: '°C', digits: 1 },
+        ];
+
+        const headerCells = sensors.map(s2 => `<th>${s2.name}<br><span style="font-weight:400;font-size:11px;">${s2.unit}</span></th>`).join('');
+
+        if (data.stats) {
+            // ===== 单日模式：6 个传感器 × max/min/avg =====
+            const s = data.stats;
+            box.style.display = 'block';
+            const emptyHint = (s.samples === 0) ? '<div class="stats-empty-hint">今日暂无采样数据</div>' : '';
+            box.innerHTML = `
+                ${emptyHint}
+                <table class="stats-table stats-table-full">
+                    <thead>
+                        <tr><th colspan="${sensors.length + 1}">📊 每日统计（基于 ${s.samples} 条采样）</th></tr>
+                        <tr class="sensor-header-row">
+                            <th class="corner-empty"></th>
+                            ${sensors.map(s2 => `<th>${s2.name}<br><span style="font-weight:400;font-size:11px;">${s2.unit}</span></th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${['max','min','avg'].map(field => {
+                            const label = { max:'max', min:'min', avg:'avg' }[field];
+                            const cells = sensors.map(s2 => {
+                                const v = s[s2.key] ? s[s2.key][field] : null;
+                                const cls = field === 'avg' ? ' class="avg-cell"' : '';
+                                return `<td${cls}>${f(v, s2.digits)}</td>`;
+                            }).join('');
+                            return `<tr><th class="row-header">${label}</th>${cells}</tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else if (data.daily_stats) {
+            // ===== 近30天模式：逐日 × 5 列（平均），放在可滚动区域 =====
+            box.style.display = 'block';
+            box.innerHTML = `
+                <div class="stats-scroll-wrap">
+                    <table class="stats-table stats-table-full">
+                        <thead>
+                            <tr>
+                                <th colspan="${sensors.length + 1}">📊 近 ${data.days || 30} 天逐日统计</th>
+                            </tr>
+                            <tr>
+                                <th class="corner-empty"></th>
+                                ${sensors.map(s2 => `<th>${s2.name}<br><span style="font-weight:400;font-size:11px;">${s2.unit}</span></th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.daily_stats.map(day => {
+                                const date = day.date ? day.date.slice(5) : '—'; // "06-15"
+                                const cells = sensors.map(s2 => {
+                                    const v = day[s2.key] ? day[s2.key].avg : null;
+                                    return `<td>${f(v, s2.digits)}</td>`;
+                                }).join('');
+                                const hasData = day.samples > 0;
+                                const cls = hasData ? '' : ' style="opacity:0.35"';
+                                return `<tr${cls}><th class="row-header">${date}</th>${cells}</tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
+
+    function renderChart(data) {
+        const ctx = document.getElementById('historyChart');
+        if (!ctx) return;
+        if (historyChart) historyChart.destroy();
+
+        // 后端已经按 30 分钟桶分桶，多日时是各天同一时间窗的全局平均。
+        // 约定 -1 为"未接入"，显示为 null（断点）；负数（<0）在 SQL 中已转 NULL。
+        const sanitize = (arr) => (arr || []).map(v =>
+            (v === null || v === undefined) ? null : (v < 0 ? null : v)
+        );
+
+        // 对光照、CO₂ 做 0-1 归一化，避免数量级碾压其他曲线
+        const lightRaw = sanitize(data.light);
+        const co2Raw   = sanitize(data.co2);
+        const maxLight = Math.max(1, ...lightRaw.filter(v => v !== null).map(v => +v));
+        const maxCo2   = Math.max(1, ...co2Raw.filter(v => v !== null).map(v => +v));
+        const lightNorm = lightRaw.map(v => v === null ? null : +(v / maxLight * 100).toFixed(1));
+        const co2Norm   = co2Raw.map(v => v === null ? null : +(v / maxCo2   * 100).toFixed(1));
+
+        // 副标题：单日显示日期；多日时仅显示天数
+        const date  = data.date;
+        const days  = data.days;
+        const sub   = date
+            ? date.replace(/-/g, '年').replace(/(\d{4}年\d{2}月\d{2}日)/, '$1')
+            : `近 ${days || 30} 天`;
+
+        historyChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: (data.timestamps || []).map(t => t),
+                datasets: [
+                    { label: '温度 (°C)', data: sanitize(data.temperature), borderColor: '#10b981',
+                      backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.35, spanGaps: true },
+                    { label: '湿度 (%)', data: sanitize(data.humidity), borderColor: '#06b6d4',
+                      backgroundColor: 'rgba(6,182,212,0.1)', tension: 0.35, spanGaps: true },
+                    { label: `光照 (%)`, data: lightNorm, borderColor: '#f59e0b',
+                      backgroundColor: 'rgba(245,158,11,0.08)', tension: 0.35, spanGaps: true,
+                      hidden: lightRaw.every(v => v === null), _rawLight: maxLight },
+                    { label: `CO₂ (%)`, data: co2Norm, borderColor: '#8b5cf6',
+                      backgroundColor: 'rgba(139,92,246,0.08)', tension: 0.35, spanGaps: true,
+                      hidden: co2Raw.every(v => v === null), _rawCo2: maxCo2 },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { size: 12 } } },
+                    title:  { display: true, text: sub, color: '#475569', font: { size: 12, weight: 'normal' } },
+                    tooltip:{ callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+                },
+                scales: {
+                    x: { display: true, grid: { display: false },
+                         ticks: { maxTicksLimit: 12,
+                                  callback: function(v, i) {
+                                      // 多日模式（每天一个点）：直接显示日期（如 "06-15"）
+                                      // 单日模式（30分钟桶）：每小时显示 1 次（:00）
+                                      const lab = this.getLabelForValue(v) || '';
+                                      if (lab.includes(' ')) {
+                                          // 单日："06-15 00:00"
+                                          const time = lab.split(' ')[1];
+                                          return time && time.endsWith(':00') ? lab : '';
+                                      }
+                                      // 多日："06-15"，显示所有
+                                      return lab;
+                                  }
+                         } },
+                    y: { type: 'linear', position: 'left',
+                         title: { display: false },
+                         beginAtZero: true },
+                }
+            }
+        });
+    }
+
+    // ============ 自动模式设置 ============
+    function setMode(mode) {
+        fetch('/api/auto/mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: mode })
+        }).then(r => r.json()).then(data => {
+            updateModeUI(data.mode);
+            const name = { manual: '手动', threshold: '阈值', schedule: '时控' }[data.mode];
+            showToast(`已切换为 ${name} 模式`, 'success');
+        }).catch(() => showToast('设置失败', 'error'));
+    }
+
+    function updateModeUI(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.mode === mode);
+        });
+        document.querySelectorAll('.mode-panel').forEach(p => {
+            p.classList.toggle('active', p.dataset.modePanel === mode);
+        });
+        const modeText = { manual: '手动控制', threshold: '阈值自动控制', schedule: '时控自动控制' };
+        document.getElementById('current-mode-label').textContent = '当前：' + (modeText[mode] || '手动控制');
+    }
+
+    // ============ 阈值控制 ============
+    const paramMeta = {
+        temperature:     { name: '温度', unit: '°C', icon: '🌡️', minText: '低于', maxText: '高于', devices: { min: '开启升温设备 (heater)', max: '开启风扇 (fan)' } },
+        humidity:        { name: '湿度', unit: '%',  icon: '💧', minText: '低于', maxText: '高于', devices: { min: '开启加湿', max: '开启通风' } },
+        soil_moisture:   { name: '土壤湿度', unit: '%', icon: '🌿', minText: '低于', maxText: '高于', devices: { min: '开启浇水 (water)', max: '停止浇水' } },
+        co2:             { name: 'CO₂', unit: 'ppm', icon: '🫧', minText: '低于', maxText: '高于', devices: { min: '通风调节', max: '加强通风' } },
+        light:           { name: '光照', unit: 'lux', icon: '☀️', minText: '低于', maxText: '高于', devices: { min: '开启补光灯 (light)', max: '关闭补光灯' } },
+    };
+
+    function loadThresholdRules() {
+        fetch('/api/threshold/rules')
+            .then(r => r.json())
+            .then(data => {
+                thresholdCache = data;
+                renderThresholdRules(data);
+            }).catch(() => {});
+    }
+
+    function renderThresholdRules(rules) {
+        const box = document.getElementById('threshold-list');
+        box.innerHTML = '';
+        Object.entries(paramMeta).forEach(([key, meta]) => {
+            const r = rules[key] || { min: 0, max: 100, enabled: true };
+            const div = document.createElement('div');
+            div.className = 'threshold-item';
+            div.innerHTML = `
+                <div class="threshold-row">
+                    <div>
+                        <div class="threshold-name">${meta.icon} ${meta.name}</div>
+                        <div class="threshold-hint">
+                            ${meta.minText} <b>${meta.min ?? '--'}${meta.unit}</b> 时：${meta.devices.min}<br>
+                            ${meta.maxText} <b>${meta.max ?? '--'}${meta.unit}</b> 时：${meta.devices.max}
+                        </div>
+                    </div>
+                    <div class="threshold-inputs">
+                        <input type="number" class="t-min" value="${r.min}" step="1">
+                        <span style="color:var(--text-muted);">~</span>
+                        <input type="number" class="t-max" value="${r.max}" step="1">
+                        <label class="switch" style="width:44px; height:24px;">
+                            <input type="checkbox" class="t-enable" ${r.enabled ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            `;
+            div.dataset.param = key;
+            box.appendChild(div);
+        });
+    }
+
+    function saveThresholdRules() {
+        const items = document.querySelectorAll('#threshold-list .threshold-item');
+        const data = {};
+        items.forEach(item => {
+            const param = item.dataset.param;
+            data[param] = {
+                min: parseFloat(item.querySelector('.t-min').value) || 0,
+                max: parseFloat(item.querySelector('.t-max').value) || 0,
+                enabled: item.querySelector('.t-enable').checked
+            };
+        });
+        fetch('/api/threshold/rules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(() => showToast('阈值设置已保存', 'success'))
+          .catch(() => showToast('保存失败', 'error'));
+    }
+
+    // ============ 时控 ============
+    const scheduleDevices = [
+        { key: 'fan',   name: '风扇',     icon: '💨' },
+        { key: 'light', name: '补光灯',   icon: '💡' },
+        { key: 'water', name: '浇水水泵', icon: '🚰' },
+        { key: 'heater',name: '升温设备', icon: '🔥' },
+    ];
+
+    function loadScheduleRules() {
+        fetch('/api/schedule/rules')
+            .then(r => r.json())
+            .then(data => {
+                scheduleCache = Array.isArray(data) ? data : (data.rules || []);
+                renderScheduleRules(scheduleCache);
+            }).catch(() => renderScheduleRules([]));
+    }
+
+    function renderScheduleRules(rules) {
+        const list = document.getElementById('schedule-list');
+        list.innerHTML = '';
+        if (!rules || rules.length === 0) {
+            // 默认给一条空模板
+            addScheduleItem();
+            return;
+        }
+        rules.forEach(r => addScheduleItem(r));
+    }
+
+    function addScheduleItem(data) {
+        const list = document.getElementById('schedule-list');
+        const item = document.createElement('div');
+        item.className = 'schedule-item';
+        const options = scheduleDevices.map(d => `<option value="${d.key}" ${(data && data.device === d.key) ? 'selected' : ''}>${d.icon} ${d.name}</option>`).join('');
+        item.innerHTML = `
+            <div class="schedule-icon">${(data ? scheduleDevices.find(d=>d.key===data.device)?.icon : '⏰') || '⏰'}</div>
+            <select class="s-device" onchange="updateScheduleIcon(this)">${options}</select>
+            <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted);">
+                <input type="time" class="s-start" value="${data?.start_time || '08:00'}">
+                <span>~</span>
+                <input type="time" class="s-end" value="${data?.end_time || '18:00'}">
+            </div>
+            <button class="schedule-del" onclick="this.parentElement.remove()">✕</button>
+        `;
+        list.appendChild(item);
+    }
+
+    function updateScheduleIcon(sel) {
+        const d = scheduleDevices.find(x => x.key === sel.value);
+        if (d) sel.parentElement.querySelector('.schedule-icon').textContent = d.icon;
+    }
+
+    function saveScheduleRules() {
+        const items = document.querySelectorAll('#schedule-list .schedule-item');
+        const rules = [];
+        items.forEach(item => {
+            const dev = item.querySelector('.s-device');
+            const start = item.querySelector('.s-start');
+            const end = item.querySelector('.s-end');
+            if (dev && start && end) {
+                rules.push({ device: dev.value, start_time: start.value, end_time: end.value, enabled: true, action: 'on' });
+            }
+        });
+        fetch('/api/schedule/rules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rules: rules })
+        }).then(r => r.json()).then(() => showToast(`已保存 ${rules.length} 条定时规则`, 'success'))
+          .catch(() => showToast('保存失败', 'error'));
+    }
+
+    // ============ 病虫害识别 ============
+    function runRecognition() {
+        const btn = document.getElementById('btn-recognize');
+        const box = document.getElementById('pest-result-box');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spin"></span><span>检测中...</span>';
+        box.innerHTML = `
+            <div class="result-placeholder">
+                <div class="result-placeholder-icon">⏳</div>
+                <div class="result-placeholder-text">正在进行图像识别，请稍候...</div>
+            </div>
+        `;
+
+        fetch('/api/pest/recognize', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    box.innerHTML = `
+                        <div class="result-placeholder" style="background:linear-gradient(135deg,#fee2e2,#fecaca);">
+                            <div class="result-placeholder-icon">❌</div>
+                            <div class="result-placeholder-text">${data.error || '检测失败'}</div>
+                        </div>
+                    `;
+                    showToast('检测失败', 'error');
+                    return;
+                }
+                renderPestResult(data);
+                loadPestRecords();
+                showToast('检测完成', 'success');
+            })
+            .catch(() => {
+                box.innerHTML = `
+                    <div class="result-placeholder">
+                        <div class="result-placeholder-icon">⚠️</div>
+                        <div class="result-placeholder-text">网络错误，请稍后再试</div>
+                    </div>
+                `;
+                showToast('检测失败', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🔬</span><span>立即识别</span>';
+            });
+    }
+
+    function renderPestResult(data) {
+        const box = document.getElementById('pest-result-box');
+        const time = data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString();
+        const detections = data.detections || [];
+        const summary = data.result_summary || '未发现病虫害';
+        const conf = data.confidence || 0;
+        const confText = conf > 0 ? `${(conf * 100).toFixed(0)}%` : '--';
+        const icon = (detections.length > 0 && !summary.includes('未发现')) ? '🐛' : '✅';
+
+        let detectionsHtml = '';
+        if (detections.length > 0) {
+            detectionsHtml = `
+                <div class="detection-box">
+                    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">📝 详细检测项</div>
+                    ${detections.map(d => `
+                        <div class="detection-item">
+                            <span class="cls">${d.class}</span>
+                            <span class="conf">置信度 ${(d.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        box.innerHTML = `
+            <div class="result-image">
+                <img src="${data.image_url}?t=${Date.now()}" alt="检测结果"
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'color:var(--text-muted); padding:40px; text-align:center;\\'>无图像</div>';">
+            </div>
+            <div class="result-summary">
+                <div class="result-summary-icon">${icon}</div>
+                <div class="result-summary-info">
+                    <div class="result-summary-title">${summary}</div>
+                    <div class="result-summary-meta">模式：${data.backend || 'UNKNOWN'} · ${time} · 已保存到本地</div>
+                </div>
+                <div class="result-summary-conf">${confText}</div>
+            </div>
+            ${detectionsHtml}
+        `;
+    }
+
+    function recognizeFromFile(filename) {
+        const btn = document.getElementById('btn-recognize');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spin"></span><span>检测中...</span>';
+        document.getElementById('pest-result-box').innerHTML = `
+            <div class="result-placeholder">
+                <div class="result-placeholder-icon">⏳</div>
+                <div class="result-placeholder-text">正在检测抓拍图像...</div>
+            </div>
+        `;
+        fetch('/api/pest/recognize/file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: filename })
+        }).then(r => r.json()).then(data => {
+            if (!data.success) {
+                showToast(data.error || '检测失败', 'error');
+                return;
+            }
+            renderPestResult(data);
+            loadPestRecords();
+            showToast('检测完成', 'success');
+        }).catch(() => showToast('检测失败', 'error'))
+          .finally(() => {
+              btn.disabled = false;
+              btn.innerHTML = '<span>🔬</span><span>立即识别</span>';
+          });
+    }
+
+    function loadPestRecords() {
+        fetch('/api/pest/records')
+            .then(r => r.json())
+            .then(data => {
+                const box = document.getElementById('pest-records');
+                if (!data || data.length === 0) {
+                    box.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <div>暂无识别记录</div>
+                        </div>
+                    `;
+                    return;
+                }
+                box.innerHTML = data.slice(0, 20).map(r => `
+                    <div class="record-item" onclick="openRecord('${r.image_path}')">
+                        <div class="record-thumb"><img src="${r.image_path}" alt=""></div>
+                        <div class="record-info">
+                            <div class="record-title">${r.result}</div>
+                            <div class="record-time">${r.timestamp ? new Date(r.timestamp).toLocaleString() : '--'}</div>
+                            <div style="margin-top:4px;"><span class="record-mode">${r.mode || 'AUTO'}</span></div>
+                        </div>
+                    </div>
+                `).join('');
+            }).catch(() => {});
+    }
+
+    function openRecord(path) {
+        const box = document.getElementById('pest-result-box');
+        box.innerHTML = `
+            <div class="result-image">
+                <img src="${path}" alt="检测结果">
+            </div>
+            <div class="result-summary" style="margin-top:14px;">
+                <div class="result-summary-icon">📋</div>
+                <div class="result-summary-info">
+                    <div class="result-summary-title">历史检测记录</div>
+                    <div class="result-summary-meta">查看完成</div>
+                </div>
+            </div>
+        `;
+        showToast('已加载检测结果', 'info');
+    }
+
+    function loadCaptures() {
+        fetch('/api/captures')
+            .then(r => r.json())
+            .then(data => {
+                const box = document.getElementById('capture-grid');
+                if (!data || data.length === 0) {
+                    box.innerHTML = '<div style="grid-column:span 4;padding:30px;color:var(--text-muted);text-align:center;">暂无抓拍</div>';
+                    return;
+                }
+                box.innerHTML = data.slice(0, 8).map(c => `
+                    <div class="capture-item" onclick="recognizeFromFile('${c.filename}')" title="点击检测此图">
+                        <img src="${c.url}" alt="${c.filename}">
+                    </div>
+                `).join('');
+            }).catch(() => {});
+    }
+
+    // ============ 定时刷新 ============
+    setInterval(updateStatus, 2000);
+    setInterval(updateTime, 1000);
+    updateStatus();
+    updateTime();
+    loadHistoryByDate();
+</script>
+</body>
+</html>

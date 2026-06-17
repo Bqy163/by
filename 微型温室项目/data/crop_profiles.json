@@ -1,0 +1,217 @@
+{
+  "crops": {
+    "tomato": {
+      "name": "番茄",
+      "name_en": "Tomato",
+      "category": "蔬菜",
+      "growth_cycle_days": 120,
+      "stages": {
+        "seedling": {
+          "name": "幼苗期",
+          "days": [0, 25],
+          "params": {
+            "temperature": {"min": 18, "optimal": 25, "max": 30},
+            "humidity": {"min": 60, "optimal": 70, "max": 85},
+            "light_hours": 12,
+            "light_lux": 15000,
+            "soil_moisture": {"min": 40, "optimal": 60, "max": 70},
+            "co2_ppm": {"min": 400, "optimal": 800, "max": 1200},
+            "water_ml_per_day": 100
+          }
+        },
+        "vegetative": {
+          "name": "营养生长期",
+          "days": [25, 55],
+          "params": {
+            "temperature": {"min": 20, "optimal": 26, "max": 32},
+            "humidity": {"min": 55, "optimal": 65, "max": 80},
+            "light_hours": 14,
+            "light_lux": 25000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 75},
+            "co2_ppm": {"min": 400, "optimal": 1000, "max": 1500},
+            "water_ml_per_day": 200
+          }
+        },
+        "flowering": {
+          "name": "开花期",
+          "days": [55, 75],
+          "params": {
+            "temperature": {"min": 22, "optimal": 28, "max": 35},
+            "humidity": {"min": 50, "optimal": 60, "max": 70},
+            "light_hours": 16,
+            "light_lux": 30000,
+            "soil_moisture": {"min": 45, "optimal": 60, "max": 70},
+            "co2_ppm": {"min": 400, "optimal": 1200, "max": 1500},
+            "water_ml_per_day": 250
+          }
+        },
+        "fruiting": {
+          "name": "结果期",
+          "days": [75, 120],
+          "params": {
+            "temperature": {"min": 20, "optimal": 25, "max": 30},
+            "humidity": {"min": 50, "optimal": 65, "max": 75},
+            "light_hours": 14,
+            "light_lux": 28000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 80},
+            "co2_ppm": {"min": 400, "optimal": 1000, "max": 1200},
+            "water_ml_per_day": 300
+          }
+        }
+      },
+      "disease_risk": {
+        "leaf_mold": {
+          "trigger": {"humidity_high": 80, "temp_range": [22, 28]},
+          "severity": "high",
+          "response": ["reduce_humidity", "increase_ventilation", "alert"]
+        },
+        "early_blight": {
+          "trigger": {"humidity_high": 75, "temp_range": [24, 30]},
+          "severity": "medium",
+          "response": ["avoid_wet_leaves", "increase_ventilation"]
+        },
+        "aphid": {
+          "trigger": {"temp_high": 28, "dry": true},
+          "severity": "high",
+          "response": ["increase_humidity", "spray", "alert"]
+        }
+      }
+    },
+    "lettuce": {
+      "name": "生菜",
+      "name_en": "Lettuce",
+      "category": "叶菜",
+      "growth_cycle_days": 45,
+      "stages": {
+        "germination": {
+          "name": "发芽期",
+          "days": [0, 7],
+          "params": {
+            "temperature": {"min": 15, "optimal": 20, "max": 25},
+            "humidity": {"min": 70, "optimal": 80, "max": 95},
+            "light_hours": 10,
+            "light_lux": 8000,
+            "soil_moisture": {"min": 60, "optimal": 75, "max": 85},
+            "co2_ppm": {"min": 400, "optimal": 600, "max": 1000},
+            "water_ml_per_day": 50
+          }
+        },
+        "seedling": {
+          "name": "幼苗期",
+          "days": [7, 20],
+          "params": {
+            "temperature": {"min": 12, "optimal": 18, "max": 25},
+            "humidity": {"min": 60, "optimal": 70, "max": 85},
+            "light_hours": 12,
+            "light_lux": 12000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 75},
+            "co2_ppm": {"min": 400, "optimal": 700, "max": 1000},
+            "water_ml_per_day": 80
+          }
+        },
+        "mature": {
+          "name": "成熟期",
+          "days": [20, 45],
+          "params": {
+            "temperature": {"min": 10, "optimal": 16, "max": 22},
+            "humidity": {"min": 55, "optimal": 65, "max": 80},
+            "light_hours": 14,
+            "light_lux": 15000,
+            "soil_moisture": {"min": 50, "optimal": 70, "max": 80},
+            "co2_ppm": {"min": 400, "optimal": 800, "max": 1200},
+            "water_ml_per_day": 120
+          }
+        }
+      },
+      "disease_risk": {
+        "downy_mildew": {
+          "trigger": {"humidity_high": 85, "temp_range": [10, 18]},
+          "severity": "high",
+          "response": ["reduce_humidity", "increase_ventilation", "alert"]
+        },
+        "tipburn": {
+          "trigger": {"humidity_low": 50, "temp_high": 25},
+          "severity": "medium",
+          "response": ["increase_humidity", "reduce_light"]
+        }
+      }
+    },
+    "strawberry": {
+      "name": "草莓",
+      "name_en": "Strawberry",
+      "category": "浆果",
+      "growth_cycle_days": 180,
+      "stages": {
+        "establishment": {
+          "name": "定植期",
+          "days": [0, 30],
+          "params": {
+            "temperature": {"min": 15, "optimal": 22, "max": 28},
+            "humidity": {"min": 60, "optimal": 70, "max": 85},
+            "light_hours": 10,
+            "light_lux": 12000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 75},
+            "co2_ppm": {"min": 400, "optimal": 600, "max": 1000},
+            "water_ml_per_day": 100
+          }
+        },
+        "vegetative": {
+          "name": "营养生长期",
+          "days": [30, 90],
+          "params": {
+            "temperature": {"min": 12, "optimal": 20, "max": 25},
+            "humidity": {"min": 55, "optimal": 65, "max": 80},
+            "light_hours": 12,
+            "light_lux": 20000,
+            "soil_moisture": {"min": 45, "optimal": 60, "max": 70},
+            "co2_ppm": {"min": 400, "optimal": 800, "max": 1200},
+            "water_ml_per_day": 150
+          }
+        },
+        "flowering": {
+          "name": "开花期",
+          "days": [90, 120],
+          "params": {
+            "temperature": {"min": 15, "optimal": 22, "max": 28},
+            "humidity": {"min": 50, "optimal": 60, "max": 70},
+            "light_hours": 14,
+            "light_lux": 25000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 75},
+            "co2_ppm": {"min": 400, "optimal": 1000, "max": 1500},
+            "water_ml_per_day": 180
+          }
+        },
+        "fruiting": {
+          "name": "结果期",
+          "days": [120, 180],
+          "params": {
+            "temperature": {"min": 12, "optimal": 18, "max": 24},
+            "humidity": {"min": 50, "optimal": 65, "max": 80},
+            "light_hours": 12,
+            "light_lux": 22000,
+            "soil_moisture": {"min": 50, "optimal": 65, "max": 75},
+            "co2_ppm": {"min": 400, "optimal": 800, "max": 1200},
+            "water_ml_per_day": 200
+          }
+        }
+      },
+      "disease_risk": {
+        "powdery_mildew": {
+          "trigger": {"humidity_high": 75, "temp_range": [15, 25]},
+          "severity": "medium",
+          "response": ["increase_ventilation", "avoid_wet_leaves"]
+        },
+        "gray_mold": {
+          "trigger": {"humidity_high": 85, "temp_range": [15, 22]},
+          "severity": "high",
+          "response": ["reduce_humidity", "increase_ventilation", "alert"]
+        },
+        "spider_mite": {
+          "trigger": {"temp_high": 28, "dry": true},
+          "severity": "medium",
+          "response": ["increase_humidity", "spray"]
+        }
+      }
+    }
+  }
+}

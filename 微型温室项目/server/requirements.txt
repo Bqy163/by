@@ -1,0 +1,14 @@
+# 智慧微型温室系统 - 服务器依赖
+# 安装: pip install -r requirements.txt
+
+# Web 框架
+flask>=2.3.0
+# 图像处理（视频流解析、病虫害检测标注）
+opencv-python>=4.8.0
+numpy>=1.24.0
+# 网络请求（与 ESP32-CAM 交互、图片抓取）
+requests>=2.31.0
+# 可选：YOLO 模型加载（仅当你有 best.pt 时才需要）
+# ultralytics>=8.0.0
+# 可选：生产级 WSGI 服务器
+# gunicorn>=21.0.0
