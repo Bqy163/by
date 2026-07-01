@@ -1,0 +1,1625 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智慧草莓大棚 - 实训平台</title>
+  <style>
+    :root {
+      --berry: #b11226;
+      --berry-hot: #f23d4f;
+      --berry-dark: #5f0714;
+      --leaf: #1d7a45;
+      --leaf-bright: #79c55b;
+      --cream: #fff4df;
+      --cream-2: #f8ead1;
+      --soil: #241611;
+      --ink: #2b1714;
+      --muted: #7b615b;
+      --card-bg: rgba(255, 250, 241, .82);
+      --bg: #fff7e8;
+      --rule: rgba(94, 35, 28, .14);
+      --danger: #c52835;
+      --warning: #dd9712;
+      --shadow: 0 24px 70px rgba(100, 28, 18, .13);
+      --shadow-hover: 0 32px 90px rgba(100, 28, 18, .21);
+      --radius: 28px;
+      --transition: 260ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #130b09;
+      --cream: #201310;
+      --cream-2: #2a1713;
+      --ink: #fff3df;
+      --muted: #cfaa9f;
+      --card-bg: rgba(38, 21, 17, .78);
+      --rule: rgba(255, 226, 192, .13);
+      --shadow: 0 24px 70px rgba(0, 0, 0, .42);
+      --shadow-hover: 0 34px 96px rgba(0, 0, 0, .56);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(242, 61, 79, .24), transparent 28rem),
+        radial-gradient(circle at 92% 12%, rgba(121, 197, 91, .20), transparent 25rem),
+        linear-gradient(135deg, var(--bg) 0%, var(--cream) 48%, var(--cream-2) 100%);
+      font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Serif SC", serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .34;
+      background-image:
+        linear-gradient(rgba(95, 7, 20, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(95, 7, 20, .045) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(circle at center, #000 0%, transparent 76%);
+    }
+
+    nav {
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+      width: min(1320px, calc(100% - 32px));
+      min-height: 74px;
+      margin: 16px auto 0;
+      padding: 10px 12px 10px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      border: 1px solid rgba(255, 255, 255, .36);
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(95, 7, 20, .92), rgba(177, 18, 38, .86));
+      box-shadow: 0 18px 50px rgba(95, 7, 20, .28);
+      backdrop-filter: blur(20px) saturate(1.35);
+    }
+    .nav-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: #fff6e8;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      white-space: nowrap;
+    }
+    .nav-brand svg {
+      width: 34px;
+      height: 34px;
+      padding: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffead0, #ff9e9c);
+      color: var(--berry-dark);
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,.18));
+    }
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex: 1 1 520px;
+      flex-wrap: wrap;
+    }
+    nav a {
+      position: relative;
+      color: rgba(255, 245, 228, .78);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    nav a:hover, nav a.active {
+      color: #5f0714;
+      background: #fff4df;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), 0 10px 22px rgba(0,0,0,.16);
+      transform: translateY(-1px);
+    }
+    .theme-toggle {
+      color: #fff4df;
+      border: 1px solid rgba(255, 244, 223, .38);
+      background: rgba(255, 255, 255, .11);
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      transition: var(--transition);
+    }
+    .theme-toggle:hover { background: rgba(255, 255, 255, .22); transform: translateY(-1px); }
+
+    .edit-mode .photo-item.placeholder.editable {
+      border: 3px dashed #b11226 !important;
+      background: rgba(177, 18, 38, 0.08) !important;
+      cursor: pointer;
+    }
+    .edit-mode .video-placeholder.editable {
+      border: 3px dashed #b11226 !important;
+      background: rgba(177, 18, 38, 0.08) !important;
+      cursor: pointer;
+    }
+    .edit-mode .ppt-placeholder.editable {
+      border: 3px dashed #b11226 !important;
+      background: rgba(177, 18, 38, 0.08) !important;
+      cursor: pointer;
+    }
+    .edit-mode .text-placeholder.editable {
+      border: 3px dashed #b11226 !important;
+      background: rgba(177, 18, 38, 0.05) !important;
+      cursor: text;
+    }
+    .edit-mode .editable:hover {
+      border-color: #f23d4f !important;
+      box-shadow: 0 0 0 4px rgba(177, 18, 38, 0.15);
+    }
+
+    .container {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      padding: 30px 24px 72px;
+    }
+    .page-block { display: none; opacity: 0; transform: translateY(18px) scale(.99); }
+    .page-block.show { display: block; animation: pageIn .62s cubic-bezier(.2,.8,.2,1) forwards; }
+    @keyframes pageIn { to { opacity: 1; transform: none; } }
+
+    .hero {
+      position: relative;
+      min-height: clamp(360px, 46vw, 560px);
+      overflow: hidden;
+      border-radius: 42px;
+      box-shadow: var(--shadow);
+      isolation: isolate;
+      border: 1px solid rgba(255,255,255,.45);
+    }
+    .hero::before {
+      content: "SMART STRAWBERRY GREENHOUSE";
+      position: absolute;
+      right: -2vw;
+      top: 26px;
+      z-index: 3;
+      color: rgba(255,255,255,.23);
+      font-size: clamp(42px, 8vw, 116px);
+      font-weight: 1000;
+      letter-spacing: -.06em;
+      line-height: .82;
+      writing-mode: vertical-rl;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        linear-gradient(90deg, rgba(49, 10, 9, .80) 0%, rgba(95, 7, 20, .44) 38%, rgba(35, 88, 45, .18) 100%),
+        radial-gradient(circle at 18% 80%, rgba(242, 61, 79, .46), transparent 27rem);
+    }
+    .hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(1.12) contrast(1.06);
+      transform: scale(1.025);
+    }
+    .hero-overlay {
+      position: absolute;
+      z-index: 4;
+      left: clamp(24px, 6vw, 72px);
+      right: clamp(24px, 12vw, 180px);
+      bottom: clamp(30px, 7vw, 78px);
+      color: #fff7e6;
+    }
+    .hero-overlay h1 {
+      max-width: 760px;
+      font-size: clamp(42px, 7.2vw, 94px);
+      line-height: .94;
+      letter-spacing: -.08em;
+      font-weight: 1000;
+      text-wrap: balance;
+      text-shadow: 0 18px 52px rgba(0,0,0,.42);
+    }
+    .hero-overlay p {
+      width: fit-content;
+      margin-top: 22px;
+      padding: 12px 18px;
+      border: 1px solid rgba(255,255,255,.36);
+      border-radius: 999px;
+      background: rgba(255, 244, 223, .14);
+      backdrop-filter: blur(16px);
+      color: rgba(255, 247, 230, .9);
+      font-size: clamp(14px, 1.5vw, 18px);
+      font-weight: 700;
+    }
+
+    .section-header {
+      position: relative;
+      margin: 42px 0 22px;
+      padding-left: 18px;
+    }
+    .section-header::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .35em;
+      width: 6px;
+      height: 2.2em;
+      border-radius: 999px;
+      background: linear-gradient(var(--berry-hot), var(--leaf-bright));
+    }
+    .section-header h1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--ink);
+      font-size: clamp(25px, 3vw, 42px);
+      line-height: 1.08;
+      font-weight: 1000;
+      letter-spacing: -.045em;
+    }
+    .section-header .icon {
+      display: inline-grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(242,61,79,.18), rgba(121,197,91,.20));
+      box-shadow: inset 0 0 0 1px var(--rule);
+      font-size: 25px;
+    }
+    .section-header .subtitle {
+      max-width: 760px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 26px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.54), transparent 48%),
+        var(--card-bg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px) saturate(1.2);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: linear-gradient(90deg, var(--berry-hot), #ffbd66, var(--leaf-bright));
+      opacity: .82;
+    }
+    .card:hover {
+      transform: translateY(-8px) rotateX(1deg);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(242, 61, 79, .34);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .card h2 {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink);
+      font-size: 19px;
+      font-weight: 950;
+      letter-spacing: -.025em;
+    }
+    .card h3 { color: var(--ink); font-size: 15px; font-weight: 900; margin-bottom: 10px; }
+    .card p, .card li { color: var(--muted); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 42px;
+      padding: 11px 20px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff9ee;
+      background: linear-gradient(135deg, var(--berry), var(--berry-hot));
+      box-shadow: 0 13px 26px rgba(177, 18, 38, .28);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      transition: var(--transition);
+    }
+    .btn:hover { transform: translateY(-2px); filter: brightness(1.04); box-shadow: 0 18px 36px rgba(177, 18, 38, .36); }
+    .btn-outline {
+      color: var(--berry);
+      border: 1px solid rgba(177,18,38,.42);
+      background: rgba(255,244,223,.44);
+      box-shadow: none;
+    }
+    .btn-outline:hover { color: #fff9ee; background: linear-gradient(135deg, var(--berry), var(--berry-hot)); }
+
+    .video-box {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: clamp(280px, 38vw, 420px);
+      margin: 0 auto 16px;
+      overflow: hidden;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 28% 24%, rgba(242,61,79,.38), transparent 24rem),
+        linear-gradient(135deg, #140908, #2b1714 52%, #081b12);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--rule);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-box video, .video-box iframe { width: 100%; height: 100%; object-fit: cover; border: 0; }
+    .video-placeholder {
+      text-align: center;
+      color: rgba(255, 244, 223, .7);
+    }
+    .video-placeholder .icon { font-size: 64px; margin-bottom: 12px; opacity: .5; }
+    .video-placeholder h3 { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+    .video-placeholder p { font-size: 13px; opacity: .7; }
+
+    .result-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, #b11226 0%, #f23d4f 50%, #eb5a6a 100%);
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 
+        0 8px 30px rgba(177, 18, 38, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s ease;
+    }
+    .result-btn:hover::before {
+      left: 100%;
+    }
+    .result-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 
+        0 12px 40px rgba(177, 18, 38, 0.45),
+        0 0 0 2px rgba(255, 255, 255, 0.15) inset;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .photo-item {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--rule);
+      background: rgba(255,255,255,.22);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .photo-item:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+      border-color: rgba(177, 18, 38, 0.3);
+    }
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-item.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      background: linear-gradient(135deg, rgba(255,255,255,.3), rgba(255,255,255,.1));
+    }
+    .photo-item.placeholder .icon { font-size: 48px; margin-bottom: 8px; opacity: .4; }
+
+    .ppt-container {
+      position: relative;
+      width: 100%;
+      height: clamp(400px, 56vw, 700px);
+      border-radius: 28px;
+      border: 1px solid var(--rule);
+      background: linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.05));
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .ppt-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      text-align: center;
+    }
+    .ppt-placeholder .icon { font-size: 64px; margin-bottom: 16px; opacity: .4; }
+    .ppt-placeholder h3 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+    .ppt-placeholder p { font-size: 14px; opacity: .7; }
+
+    .team-card {
+      text-align: center;
+      padding: 32px;
+      border-radius: var(--radius);
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .team-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-hover);
+    }
+    .team-card .icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 10px 20px rgba(177,18,38,.15));
+    }
+    .team-card h3 {
+      font-size: 22px;
+      font-weight: 950;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .team-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .team-card.research-a { border-top: 5px solid var(--berry); }
+    .team-card.research-b { border-top: 5px solid var(--leaf); }
+    .team-card.publish-a { border-top: 5px solid var(--warning); }
+    .team-card.publish-b { border-top: 5px solid #9b59b6; }
+
+    @media (max-width: 820px) {
+      nav {
+        top: 8px;
+        width: calc(100% - 16px);
+        border-radius: 26px;
+        padding: 14px;
+      }
+      .nav-brand, .theme-toggle { width: 100%; justify-content: center; }
+      .nav-links { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+      .container { padding: 20px 14px 56px; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .card { padding: 21px; border-radius: 24px; }
+      .hero { border-radius: 28px; min-height: 420px; }
+      .hero::before { display: none; }
+      .hero-overlay { left: 22px; right: 22px; }
+      .photo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .photo-grid { grid-template-columns: 1fr; }
+    }
+
+    footer {
+      background: linear-gradient(135deg, #1a0f0d 0%, #2d1814 50%, #1f100d 100%);
+      color: #f5e8d8;
+      padding: 48px 24px 24px;
+      margin-top: 48px;
+    }
+    .footer-content {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 32px;
+    }
+    .footer-left {
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .footer-leaf {
+      font-size: 32px;
+    }
+    .footer-brand h3 {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      background: linear-gradient(90deg, #79c55b, #a8e063);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .footer-brand p {
+      font-size: 14px;
+      color: #9a8578;
+    }
+    .footer-section {
+      min-width: 140px;
+    }
+    .footer-section h4 {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: #d4c4b4;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .footer-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .footer-section li {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #9a8578;
+    }
+    .footer-section li .icon {
+      margin-right: 8px;
+    }
+    .footer-section a {
+      color: #9a8578;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer-section a:hover {
+      color: #79c55b;
+    }
+    .footer-right {
+      text-align: right;
+    }
+    .footer-right p {
+      font-size: 13px;
+      color: #6b5a50;
+    }
+
+    @media (max-width: 768px) {
+      .footer-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .footer-right {
+        text-align: left;
+        width: 100%;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+      .footer-left {
+        gap: 24px;
+      }
+    }
+    
+    #githubUploadModal {
+      display: none;
+    }
+    .github-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 24px;
+    }
+    .github-modal {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    .github-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      background: linear-gradient(135deg, #24292e, #2d333b);
+      color: #fff;
+      border-radius: 16px 16px 0 0;
+    }
+    .github-modal-icon {
+      font-size: 32px;
+    }
+    .github-modal-header h2 {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0;
+    }
+    .github-modal-header p {
+      font-size: 13px;
+      opacity: 0.8;
+      margin: 2px 0 0 0;
+    }
+    .github-modal-close {
+      margin-left: auto;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .github-modal-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .github-modal-body {
+      padding: 24px;
+    }
+    .github-form-group {
+      margin-bottom: 16px;
+    }
+    .github-form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 800;
+      color: #2d1814;
+      margin-bottom: 6px;
+    }
+    .github-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      border: 2px solid #e0d4c4;
+      border-radius: 10px;
+      background: #faf8f5;
+      color: #2d1814;
+      transition: all 0.3s;
+    }
+    .github-input:focus {
+      outline: none;
+      border-color: #24292e;
+      background: #fff;
+    }
+    .github-input::placeholder {
+      color: #9a8578;
+    }
+    .github-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .github-btn-secondary {
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d1814;
+      background: #f5ede6;
+      border: 2px solid #e0d4c4;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .github-btn-secondary:hover {
+      background: #e8d8c8;
+    }
+    .github-btn-primary {
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: #24292e;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .github-btn-primary:hover {
+      background: #2d333b;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(36, 41, 46, 0.3);
+    }
+    .github-modal-tips {
+      padding: 16px 24px;
+      background: #f6f8fa;
+      border-top: 1px solid #e0e0e0;
+      border-radius: 0 0 16px 16px;
+    }
+    .github-modal-tips p {
+      font-size: 13px;
+      color: #656d76;
+      margin: 4px 0;
+    }
+    .github-modal-tips strong {
+      color: #24292e;
+    }
+  </style>
+
+</head>
+<body>
+<nav>
+  <div class="nav-brand">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2C8.5 2 5.5 4.5 5 8c-.2 1.5.2 3 1 4.2.8 1.2 2 2.2 3.3 2.8.5.2.8.7.7 1.2v.8c0 .5.4 1 1 1h2c.5 0 1-.5 1-1v-.8c-.1-.5.2-1 .7-1.2 1.4-.6 2.5-1.6 3.3-2.8.8-1.2 1.2-2.7 1-4.2C18.5 4.5 15.5 2 12 2zM9 18c0 .6.4 1 1 1h4c.6 0 1-.4 1-1v-1H9v1z"/></svg>
+    智慧草莓大棚
+  </div>
+  <div class="nav-links">
+    <a data-target="home" class="active">首页总览</a>
+    <a data-target="researchA">研发组A</a>
+    <a data-target="researchB">研发组B</a>
+    <a data-target="publishA">发布组A</a>
+    <a href="landing.html" target="_self">发布组B</a>
+  </div>
+  <button class="theme-toggle" id="themeToggle">深色模式</button>
+  <button class="theme-toggle" id="editToggle" onclick="toggleEditMode()" style="margin-left:8px;">🔒 编辑内容</button>
+</nav>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home" class="page-block show">
+  <div class="hero" style="margin-top:24px;">
+    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20strawberry%20greenhouse%20interior%20with%20rows%20of%20strawberry%20plants%2C%20smart%20agriculture%20technology%2C%20LED%20grow%20lights%2C%20climate%20control%20sensors%2C%20professional%20photography%2C%20warm%20lighting&image_size=landscape_16_9" alt="智慧草莓大棚">
+    <div class="hero-overlay">
+      <h1>智慧草莓大棚</h1>
+      <p>DSSAT草莓模型实训项目 · 分组协作成果展示</p>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h1><span class="icon">🎬</span>班级实训视频</h1>
+    <p class="subtitle">2024级智慧农业1班全体同学</p>
+  </div>
+
+  <div class="video-container" style="max-width:800px;margin:0 auto;border-radius:24px;overflow:hidden;">
+    <div class="video-placeholder" style="width:100%;height:clamp(280px, 38vw, 420px);background:linear-gradient(135deg,#2d1814,#1a0f0d);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,245,230,0.6);text-align:center;cursor:pointer;">
+      <div class="icon" style="font-size:64px;margin-bottom:16px;">🎥</div>
+      <h3 style="font-size:20px;font-weight:900;margin-bottom:8px;">班级实训视频</h3>
+      <p style="font-size:14px;">点击上传视频</p>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h1><span class="icon">👥</span>实训分组</h1>
+    <p class="subtitle">点击卡片查看各小组详细成果展示</p>
+  </div>
+
+  <div class="grid grid-4">
+    <div class="team-card research-a" onclick="showSection('researchA')">
+      <div class="icon">🔬</div>
+      <h3>研发组A</h3>
+      <p>模型机理重构与验证</p>
+    </div>
+    <div class="team-card research-b" onclick="showSection('researchB')">
+      <div class="icon">📊</div>
+      <h3>研发组B</h3>
+      <p>数据处理与情景模拟</p>
+    </div>
+    <div class="team-card publish-a" onclick="showSection('publishA')">
+      <div class="icon">📖</div>
+      <h3>发布组A</h3>
+      <p>PPT制作与成果展示</p>
+    </div>
+    <div class="team-card publish-b" onclick="window.location.href='landing.html'">
+      <div class="icon">🌐</div>
+      <h3>发布组B</h3>
+      <p>网页框架搭建与维护</p>
+    </div>
+  </div>
+
+  <div class="section-header" style="margin-top:32px;">
+    <h1><span class="icon">📝</span>实训内容</h1>
+    <p class="subtitle">点击进入填写实训相关内容</p>
+  </div>
+
+  <div class="card" onclick="showSection('trainingContent')" style="cursor:pointer;">
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,#79c55b,#1d7a45);display:flex;align-items:center;justify-content:center;font-size:36px;">📝</div>
+      <div>
+        <h3 style="font-size:20px;font-weight:900;margin-bottom:8px;">实训内容填写</h3>
+        <p style="color:#7b615b;">包含实训目标、过程记录、成果总结等内容</p>
+      </div>
+      <div style="margin-left:auto;font-size:24px;color:#b11226;">→</div>
+    </div>
+  </div>
+</div>
+
+<!-- TRAINING CONTENT -->
+<div id="trainingContent" class="page-block">
+  <div class="section-header">
+    <h1><span class="icon">📝</span>实训内容</h1>
+    <p class="subtitle">填写实训相关内容</p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 实训目标</h2>
+    <textarea placeholder="在此填写实训目标..." style="width:100%;min-height:150px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>📋 实训过程</h2>
+    <textarea placeholder="在此填写实训过程记录..." style="width:100%;min-height:200px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>✅ 实训成果</h2>
+    <textarea placeholder="在此填写实训成果总结..." style="width:100%;min-height:150px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>📊 实训数据</h2>
+    <textarea placeholder="在此填写实训相关数据..." style="width:100%;min-height:150px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>💡 实训心得</h2>
+    <textarea placeholder="在此填写实训心得体会..." style="width:100%;min-height:150px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+</div>
+
+<!-- RESEARCH A -->
+<div id="researchA" class="page-block">
+  <div class="section-header">
+    <h1><span class="icon">🔬</span>研发组A</h1>
+    <p class="subtitle">学习梳理DSSAT草莓模型底层机理，搭建模型重构方案与参数对照表；开展模型机理验证、模块功能测试，绘制UML关系图并完善PPT；进行模型机理重构与验证成果展示</p>
+  </div>
+
+  <div class="card">
+    <h2>📷 成果展示图片</h2>
+    <div class="photo-grid">
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片1</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片2</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片3</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片4</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片5</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 PPT展示</h2>
+    <div class="ppt-container">
+      <div class="ppt-placeholder">
+        <div class="icon">📋</div>
+        <h3>研发组A PPT展示</h3>
+        <p>预留PPT嵌入位置，可插入iframe或上传PPT文件</p>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>❓ 问题汇总</h2>
+    <textarea placeholder="在此填写研发组A遇到的问题及解决方案..." style="width:100%;min-height:200px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+</div>
+
+<!-- RESEARCH B -->
+<div id="researchB" class="page-block">
+  <div class="section-header">
+    <h1><span class="icon">📊</span>研发组B</h1>
+    <p class="subtitle">掌握Git基础操作，整理草莓模型输入数据集与输入输出说明文档；分析模型输入输出机制，运行DSSAT生成结果并和Python结果比对，完成多情景模拟分析；展示数据处理与情景模拟成果</p>
+  </div>
+
+  <div class="card">
+    <h2>📷 成果展示图片</h2>
+    <div class="photo-grid">
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片1</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片2</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片3</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片4</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片5</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 PPT展示</h2>
+    <div class="ppt-container">
+      <div class="ppt-placeholder">
+        <div class="icon">📋</div>
+        <h3>研发组B PPT展示</h3>
+        <p>预留PPT嵌入位置，可插入iframe或上传PPT文件</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>❓ 问题汇总</h2>
+    <textarea placeholder="在此填写研发组B在实训过程中遇到的问题..." style="width:100%;min-height:200px;padding:16px;border:2px solid #f0e8d6;border-radius:12px;font-size:16px;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.3s;" onfocus="this.style.borderColor='#b11226'" onblur="this.style.borderColor='#f0e8d6'"></textarea>
+  </div>
+</div>
+
+<!-- PUBLISH A -->
+<div id="publishA" class="page-block">
+  <div class="section-header">
+    <h1><span class="icon">📖</span>发布组A</h1>
+    <p class="subtitle">初期搭建项目PPT模板，收集实训背景资料；后续对接各组数据，使用绘图库生成可视化图表，整合优化最终展示PPT与演示素材；负责项目整体介绍、成果总结并主持展示环节</p>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <a href="publishA-result.html" target="_blank" class="result-btn">📊 查看成果页面</a>
+  </div>
+
+  <div class="card">
+    <h2>📷 成果展示图片</h2>
+    <div class="photo-grid">
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片1</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片2</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片3</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片4</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片5</div>
+        </div>
+      </div>
+      <div class="photo-item placeholder">
+        <div>
+          <div class="icon">🖼️</div>
+          <div>图片6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 PPT展示</h2>
+    <div class="ppt-container">
+      <div class="ppt-placeholder">
+        <div class="icon">📋</div>
+        <h3>发布组A PPT展示</h3>
+        <p>预留PPT嵌入位置，可插入iframe或上传PPT文件</p>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+</div>
+
+<script>
+const EDIT_PASSWORD = "strawberry";
+let isEditMode = false;
+const STORAGE_KEY = 'strawberry_greenhouse_data';
+
+function loadContent() {
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  if (!savedData) return;
+  
+  try {
+    const data = JSON.parse(savedData);
+    
+    if (data.photos) {
+      document.querySelectorAll('.photo-item.placeholder').forEach((item, index) => {
+        if (data.photos[index]) {
+          item.innerHTML = data.photos[index];
+        }
+      });
+    }
+    
+    if (data.videos) {
+      document.querySelectorAll('.video-container').forEach((container, index) => {
+        if (data.videos[index]) {
+          container.innerHTML = data.videos[index];
+        }
+      });
+    }
+    
+    if (data.ppts) {
+      document.querySelectorAll('.ppt-container').forEach((container, index) => {
+        if (data.ppts[index]) {
+          container.innerHTML = data.ppts[index];
+        }
+      });
+    }
+    
+    if (data.textareas) {
+      document.querySelectorAll('textarea').forEach((textarea, index) => {
+        if (data.textareas[index]) {
+          textarea.value = data.textareas[index];
+        }
+      });
+    }
+    
+    if (data.textPlaceholders) {
+      document.querySelectorAll('.text-placeholder').forEach((item, index) => {
+        if (data.textPlaceholders[index]) {
+          item.innerHTML = data.textPlaceholders[index];
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Failed to load saved content:', e);
+  }
+}
+
+function saveContent() {
+  const data = {
+    photos: [],
+    videos: [],
+    ppts: [],
+    textareas: [],
+    textPlaceholders: []
+  };
+  
+  document.querySelectorAll('.photo-item.placeholder').forEach(item => {
+    data.photos.push(item.innerHTML);
+  });
+  
+  document.querySelectorAll('.video-container').forEach(container => {
+    data.videos.push(container.innerHTML);
+  });
+  
+  document.querySelectorAll('.ppt-container').forEach(container => {
+    data.ppts.push(container.innerHTML);
+  });
+  
+  document.querySelectorAll('textarea').forEach(textarea => {
+    data.textareas.push(textarea.value);
+  });
+  
+  document.querySelectorAll('.text-placeholder').forEach(item => {
+    data.textPlaceholders.push(item.innerHTML);
+  });
+  
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+window.addEventListener('load', loadContent);
+
+function showSection(id) {
+  document.querySelectorAll('.page-block').forEach(el => el.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  
+  document.querySelectorAll('.nav-links a').forEach(el => {
+    el.classList.remove('active');
+    if (el.dataset.target === id) el.classList.add('active');
+  });
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.nav-links a[data-target]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    showSection(link.dataset.target);
+  });
+});
+
+const themeToggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+
+themeToggle.addEventListener('click', () => {
+  if (html.dataset.theme === 'dark') {
+    html.removeAttribute('data-theme');
+    themeToggle.textContent = '深色模式';
+  } else {
+    html.dataset.theme = 'dark';
+    themeToggle.textContent = '浅色模式';
+  }
+});
+
+function toggleEditMode() {
+  if (isEditMode) {
+    exitEditMode();
+    return;
+  }
+  
+  const password = prompt("请输入编辑密码：");
+  if (password === EDIT_PASSWORD) {
+    enterEditMode();
+  } else if (password !== null) {
+    alert("密码错误！");
+  }
+}
+
+function enterEditMode() {
+  isEditMode = true;
+  document.body.classList.add('edit-mode');
+  
+  const editBtn = document.getElementById('editToggle');
+  if (editBtn) {
+    editBtn.innerHTML = '✏️ 退出编辑';
+    editBtn.style.background = '#1d7a45';
+  }
+  
+  showGithubUploadButton();
+  
+  document.querySelectorAll('.photo-item.placeholder').forEach(item => {
+    item.contentEditable = true;
+    item.classList.add('editable');
+    const hasImage = item.querySelector('img');
+    if (!hasImage && item.innerHTML.trim() === '') {
+      item.innerHTML = '<div class="icon">📷</div><div>点击上传图片</div>';
+    } else if (!hasImage) {
+      item.innerHTML = '<div class="icon">📷</div><div>点击上传图片</div>';
+    }
+    item.onclick = (e) => {
+      e.preventDefault();
+      const target = e.target.closest('.photo-item');
+      showUploadDialog(target, 'image');
+    };
+  });
+  
+  document.querySelectorAll('.video-container .video-placeholder').forEach(item => {
+    item.classList.add('editable');
+    item.onclick = (e) => {
+      e.preventDefault();
+      showUploadDialog(e.target, 'video');
+    };
+  });
+  
+  document.querySelectorAll('.video-container video').forEach(video => {
+    video.parentElement.onclick = (e) => {
+      if (e.target === video) return;
+      e.preventDefault();
+      showUploadDialog(video, 'video');
+    };
+    video.parentElement.classList.add('editable');
+  });
+  
+  document.querySelectorAll('.ppt-placeholder').forEach(item => {
+    item.classList.add('editable');
+    item.onclick = (e) => {
+      e.preventDefault();
+      showUploadDialog(e.target, 'ppt');
+    };
+  });
+  
+  document.querySelectorAll('.ppt-container iframe').forEach(iframe => {
+    iframe.parentElement.onclick = (e) => {
+      if (e.target === iframe) return;
+      e.preventDefault();
+      showUploadDialog(iframe, 'ppt');
+    };
+    iframe.parentElement.classList.add('editable');
+  });
+  
+  document.querySelectorAll('.text-placeholder, textarea').forEach(item => {
+    item.contentEditable = true;
+    item.classList.add('editable');
+    if (item.tagName === 'TEXTAREA') {
+      item.style.borderColor = '#b11226';
+    }
+  });
+  
+  alert("已进入编辑模式！\n\n📷 点击图片区域上传/更换图片\n🎬 点击视频区域上传/更换视频\n📋 点击PPT区域输入/更换链接\n📝 点击文本区域直接编辑文字");
+}
+
+function exitEditMode() {
+  isEditMode = false;
+  document.body.classList.remove('edit-mode');
+  
+  hideGithubUploadButton();
+  
+  saveContent();
+  
+  const editBtn = document.getElementById('editToggle');
+  if (editBtn) {
+    editBtn.innerHTML = '🔒 编辑内容';
+    editBtn.style.background = '';
+  }
+  
+  alert("✅ 内容已保存！\n\n下次打开网页时，您编辑的内容会自动恢复。");
+  
+  document.querySelectorAll('.photo-item.placeholder').forEach(item => {
+    item.contentEditable = false;
+    item.classList.remove('editable');
+    item.onclick = null;
+    if (!item.querySelector('img') && item.innerHTML.trim() === '') {
+      item.innerHTML = '<div class="icon">🖼️</div><div>图片占位</div>';
+    }
+  });
+  
+  document.querySelectorAll('.video-container').forEach(container => {
+    container.classList.remove('editable');
+    container.onclick = null;
+  });
+  
+  document.querySelectorAll('.ppt-container').forEach(container => {
+    container.classList.remove('editable');
+    container.onclick = null;
+  });
+  
+  document.querySelectorAll('.text-placeholder, textarea').forEach(item => {
+    item.contentEditable = false;
+    item.classList.remove('editable');
+    if (item.tagName === 'TEXTAREA') {
+      item.style.borderColor = '#f0e8d6';
+    }
+  });
+}
+
+function showGithubUploadButton() {
+  let githubBtn = document.getElementById('githubUploadBtn');
+  if (!githubBtn) {
+    githubBtn = document.createElement('button');
+    githubBtn.id = 'githubUploadBtn';
+    githubBtn.innerHTML = '🐙 GitHub文件上传';
+    githubBtn.style.cssText = `
+      position: fixed;
+      bottom: 120px;
+      right: 24px;
+      z-index: 1000;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      background: #24292e;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(36, 41, 46, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    `;
+    githubBtn.onclick = showGithubUploadModal;
+    document.body.appendChild(githubBtn);
+  }
+  githubBtn.style.display = 'flex';
+}
+
+function hideGithubUploadButton() {
+  const githubBtn = document.getElementById('githubUploadBtn');
+  if (githubBtn) {
+    githubBtn.style.display = 'none';
+  }
+}
+
+function showGithubUploadModal() {
+  let modal = document.getElementById('githubUploadModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'githubUploadModal';
+    modal.innerHTML = `
+      <div class="github-modal-overlay" onclick="closeGithubUploadModal()">
+        <div class="github-modal" onclick="event.stopPropagation()">
+          <div class="github-modal-header">
+            <div class="github-modal-icon">🐙</div>
+            <div>
+              <h2>GitHub 文件上传</h2>
+              <p>从GitHub仓库导入项目文件</p>
+            </div>
+            <button class="github-modal-close" onclick="closeGithubUploadModal()">×</button>
+          </div>
+          <div class="github-modal-body">
+            <div class="github-form-group">
+              <label>仓库地址</label>
+              <input type="text" id="githubRepoUrl" placeholder="https://github.com/username/repo" class="github-input">
+            </div>
+            <div class="github-form-group">
+              <label>分支名称</label>
+              <input type="text" id="githubBranch" placeholder="main" value="main" class="github-input">
+            </div>
+            <div class="github-form-group">
+              <label>文件路径</label>
+              <input type="text" id="githubFilePath" placeholder="docs/presentation.pptx" class="github-input">
+            </div>
+            <div class="github-form-group">
+              <label>文件类型</label>
+              <select id="githubFileType" class="github-input">
+                <option value="image">📷 图片文件 (PNG/JPG/GIF)</option>
+                <option value="ppt">📋 PPT演示文稿</option>
+                <option value="video">🎬 视频文件</option>
+                <option value="document">📄 文档文件</option>
+              </select>
+            </div>
+            <div class="github-form-group">
+              <label>目标位置</label>
+              <select id="githubTargetLocation" class="github-input">
+                <option value="home-video">首页视频区域</option>
+                <option value="home-photo">首页图片区域</option>
+                <option value="researchA-photo">研发组A图片区域</option>
+                <option value="researchA-ppt">研发组A PPT区域</option>
+                <option value="researchB-photo">研发组B图片区域</option>
+                <option value="researchB-ppt">研发组B PPT区域</option>
+                <option value="publishA-photo">发布组A图片区域</option>
+                <option value="publishA-ppt">发布组A PPT区域</option>
+                <option value="publishB-photo">发布组B图片区域</option>
+                <option value="publishB-ppt">发布组B PPT区域</option>
+                <option value="practice-content">实训内容区域</option>
+              </select>
+            </div>
+          </div>
+          <div class="github-modal-footer">
+            <button class="github-btn-secondary" onclick="closeGithubUploadModal()">取消</button>
+            <button class="github-btn-primary" onclick="uploadFromGithub()">🔄 从GitHub导入</button>
+          </div>
+          <div class="github-modal-tips">
+            <p>💡 <strong>开发预留接口：</strong></p>
+            <p>后续将集成GitHub API，支持直接从仓库读取文件内容</p>
+            <p>当前仅为页面入口，功能待完善</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+}
+
+function closeGithubUploadModal() {
+  const modal = document.getElementById('githubUploadModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+function uploadFromGithub() {
+  const repoUrl = document.getElementById('githubRepoUrl').value;
+  const branch = document.getElementById('githubBranch').value;
+  const filePath = document.getElementById('githubFilePath').value;
+  const fileType = document.getElementById('githubFileType').value;
+  const targetLocation = document.getElementById('githubTargetLocation').value;
+  
+  if (!repoUrl || !filePath) {
+    alert('请填写仓库地址和文件路径！');
+    return;
+  }
+  
+  alert(`
+    🐙 GitHub文件上传预留接口已触发！
+    
+    参数信息：
+    - 仓库地址：${repoUrl}
+    - 分支名称：${branch}
+    - 文件路径：${filePath}
+    - 文件类型：${fileType}
+    - 目标位置：${targetLocation}
+    
+    ⚠️ 当前仅为开发预留入口，实际功能待完善。
+    
+    后续开发计划：
+    1. 集成GitHub API认证
+    2. 通过API读取仓库文件内容
+    3. 将文件内容解析并插入到指定位置
+    4. 支持PPT、图片、视频等多种格式
+  `);
+  
+  closeGithubUploadModal();
+}
+
+function showUploadDialog(target, type) {
+  if (type === 'image') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          let photoItem = target;
+          if (!photoItem.classList.contains('photo-item')) {
+            photoItem = target.closest('.photo-item');
+          }
+          if (photoItem) {
+            photoItem.innerHTML = `<img src="${evt.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+          }
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    };
+    input.click();
+  } else if (type === 'video') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/*';
+    input.onchange = (e) => {
+      if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          let container = target;
+          if (!container.classList.contains('video-container')) {
+            container = target.closest('.video-container');
+          }
+          if (container) {
+            container.innerHTML = '';
+            const video = document.createElement('video');
+            video.src = evt.target.result;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.borderRadius = '16px';
+            container.appendChild(video);
+          }
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    };
+    input.click();
+  } else if (type === 'ppt') {
+    const url = prompt("请输入PPT在线链接（如Google Drive、OneDrive或腾讯文档）：");
+    if (url) {
+      let container = target;
+      if (!container.classList.contains('ppt-container')) {
+        container = target.closest('.ppt-container');
+      }
+      if (container) {
+        const embedUrl = url.replace('/view', '/embed');
+        container.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.src = embedUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '400px';
+        iframe.style.borderRadius = '16px';
+        iframe.style.border = 'none';
+        iframe.setAttribute('allowfullscreen', 'true');
+        container.appendChild(iframe);
+      }
+    }
+  }
+}
+</script>
+
+<footer>
+  <div class="footer-content">
+    <div class="footer-left">
+      <div class="footer-brand">
+        <span class="footer-leaf">🍃</span>
+        <div>
+          <h3>智慧草莓大棚</h3>
+          <p>DSSAT草莓模型实训项目成果展示平台</p>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h4>网页内容制作</h4>
+        <ul>
+          <li><span class="icon">📍</span>定位占位文本</li>
+          <li><span class="icon">📧</span>邮箱占位文本</li>
+          <li><span class="icon">📞</span>电话占位文本</li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4>快速链接</h4>
+        <ul>
+          <li><a href="">首页</a></li>
+          <li><a href="">实训组别</a></li>
+          <li><a href="">关于实训</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-right">
+      <p>&copy; 2024 智慧草莓大棚实训项目. 保留所有权利.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
